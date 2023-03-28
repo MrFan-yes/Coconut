@@ -13,6 +13,7 @@
     <description>coconut后台管理系统</description>
 
     <properties>
+        <configuration-processor.version>2.7.3</configuration-processor.version>
         <coconut.version>3.8.5</coconut.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -35,6 +36,13 @@
     <!-- 依赖声明 -->
     <dependencyManagement>
         <dependencies>
+
+            <!-- 注解处理器 读取YAML配置的元数据 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-configuration-processor</artifactId>
+                <version>${configuration-processor.version}</version>
+            </dependency>
 
             <!-- SpringBoot的依赖配置-->
             <dependency>
