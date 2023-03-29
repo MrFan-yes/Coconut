@@ -37,6 +37,13 @@
     <dependencyManagement>
         <dependencies>
 
+            <!-- 第三方登录 -->
+            <dependency>
+                <groupId>me.zhyd.oauth</groupId>
+                <artifactId>JustAuth</artifactId>
+                <version>1.16.5</version>
+            </dependency>
+
             <!-- 注解处理器 读取YAML配置的元数据 -->
             <dependency>
                 <groupId>org.springframework.boot</groupId>

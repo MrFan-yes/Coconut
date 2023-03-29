@@ -1,6 +1,13 @@
 package com.coconut.framework.web.service;
 
 import javax.annotation.Resource;
+
+import me.zhyd.oauth.config.AuthConfig;
+import me.zhyd.oauth.model.AuthCallback;
+import me.zhyd.oauth.model.AuthResponse;
+import me.zhyd.oauth.model.AuthUser;
+import me.zhyd.oauth.request.AuthGiteeRequest;
+import me.zhyd.oauth.request.AuthRequest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -29,9 +36,13 @@ import com.coconut.framework.security.context.AuthenticationContextHolder;
 import com.coconut.system.service.ISysConfigService;
 import com.coconut.system.service.ISysUserService;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 /**
  * 登录校验方法
- * 
+ *
  * @author ruoyi
  */
 @Component
@@ -45,7 +56,7 @@ public class SysLoginService
 
     @Autowired
     private RedisCache redisCache;
-    
+
     @Autowired
     private ISysUserService userService;
 
@@ -54,7 +65,7 @@ public class SysLoginService
 
     /**
      * 登录验证
-     * 
+     *
      * @param username 用户名
      * @param password 密码
      * @param code 验证码
@@ -102,7 +113,7 @@ public class SysLoginService
 
     /**
      * 校验验证码
-     * 
+     *
      * @param username 用户名
      * @param code 验证码
      * @param uuid 唯一标识
@@ -177,5 +188,47 @@ public class SysLoginService
         sysUser.setLoginIp(IpUtils.getIpAddr());
         sysUser.setLoginDate(DateUtils.getNowDate());
         userService.updateUserProfile(sysUser);
+    }
+
+    public String loginByOtherSource(String code, String source, String uuid) {
+
+        // 先到数据库查询这个人曾经有没有登录过，没有就注册
+        // 创建授权request
+        AuthRequest authRequest = new AuthGiteeRequest(AuthConfig.builder()
+                .clientId("6ec244b4618ea9c6b412255e4aedf15fc26f1277b3ab54c5166e627baf03bdbd")
+                .clientSecret("325af1f9891d1fec8091c117d9ed6775545be75a648577ea5bf248e5b278b943")
+                .redirectUri("http://localhost:1024/callback")
+                .build());
+        AuthResponse<AuthUser> login = authRequest.login(AuthCallback.builder().state(uuid).code(code).build());
+        System.out.println(login);
+
+        // 先查询数据库有没有该用户
+        AuthUser authUser = login.getData();
+        SysUser sysUser = new SysUser();
+        sysUser.setUserName(authUser.getUsername());
+        sysUser.setSource(authUser.getSource());
+        List<SysUser> sysUsers = userService.selectUserListNoDataScope(sysUser);
+        if (sysUsers.size() > 1) {
+            throw new ServiceException("第三方登录异常，账号重叠");
+        } else if (sysUsers.size() == 0) {
+            // 相当于注册
+            sysUser.setNickName(authUser.getNickname());
+            sysUser.setAvatar(authUser.getAvatar());
+            sysUser.setEmail(authUser.getEmail());
+            sysUser.setRemark(authUser.getRemark());
+            Long num = userService.registerUserAndGetUserId(sysUser);
+            AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.REGISTER,
+                    MessageUtils.message("user.register.success")));
+        } else {
+            sysUser = sysUsers.get(0);
+        }
+        AsyncManager.me().execute(AsyncFactory.recordLogininfor(sysUser.getUserName(), Constants.LOGIN_SUCCESS, MessageUtils.message("user.login.success")));
+        // 注册成功或者是已经存在的用户
+        Set<String> permission = new HashSet<>();
+        permission.add("Xxxix");  // 【自定义一个普通权限】
+        LoginUser loginUser = new LoginUser(sysUser, permission);
+        recordLoginInfo(loginUser.getUserId());
+        // 生成token
+        return tokenService.createToken(loginUser);
     }
 }

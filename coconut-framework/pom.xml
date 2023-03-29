@@ -17,6 +17,12 @@
 
     <dependencies>
 
+        <!-- 第三方登录 -->
+        <dependency>
+            <groupId>me.zhyd.oauth</groupId>
+            <artifactId>JustAuth</artifactId>
+        </dependency>
+
         <!-- 添加注解处理器 -->
         <dependency>
             <groupId>org.springframework.boot</groupId>

@@ -14,7 +14,7 @@ import com.coconut.common.xss.Xss;
 
 /**
  * 用户对象 sys_user
- * 
+ *
  * @author ruoyi
  */
 public class SysUser extends BaseEntity
@@ -88,6 +88,7 @@ public class SysUser extends BaseEntity
 
     /** 角色ID */
     private Long roleId;
+    private String source;
 
     public SysUser()
     {
@@ -320,5 +321,13 @@ public class SysUser extends BaseEntity
             .append("remark", getRemark())
             .append("dept", getDept())
             .toString();
+    }
+
+    public void setSource(String source) {
+        this.source = source;
+    }
+
+    public String getSource() {
+        return source;
     }
 }
